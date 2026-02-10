@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SnapCart - India's Favorite Shopping Destination">
+    <title>SnapCart | Shop Smart, Shop Snap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        primary: { 50: '#fff7ed', 100: '#ffedd5', 500: '#f97316', 600: '#ea580c', 700: '#c2410c' },
+                        secondary: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .mobile-menu { transform: translateX(-100%); transition: transform 0.3s ease-in-out; }
+        .mobile-menu.open { transform: translateX(0); }
+        .cart-sidebar { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
+        .cart-sidebar.open { transform: translateX(0); }
+        .product-card:hover .product-actions { opacity: 1; transform: translateY(0); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .toast { transform: translateX(120%); transition: transform 0.3s ease-out; }
+        .toast.show { transform: translateX(0); }
+        .loader { border: 3px solid #f3f4f6; border-top: 3px solid #f97316; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-effect border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo -->
+                <div class="flex-shrink-0 flex items-center cursor-pointer" onclick="router.navigate('home')">
+                    <div class="bg-primary-600 text-white p-2 rounded-lg mr-2">
+                        <i class="fas fa-shopping-bag text-xl"></i>
+                    </div>
+                    <span class="font-bold text-2xl tracking-tight text-slate-900">Snap<span class="text-primary-600">Cart</span></span>
+                </div>
+
+                <!-- Desktop Search -->
+                <div class="hidden md:flex flex-1 max-w-lg mx-8 relative">
+                    <input type="text" id="global-search" placeholder="Search for products, brands and more..." 
+                           class="w-full pl-10 pr-4 py-2 rounded-full border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-slate-50 transition-all"
+                           onkeypress="if(event.key === 'Enter') app.handleSearch(this.value)">
+                    <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <button onclick="router.navigate('shop')" class="text-slate-600 hover:text-primary-600 font-medium transition">Shop</button>
+                    <button onclick="app.toggleCart()" class="relative text-slate-600 hover:text-primary-600 transition">
+                        <i class="fas fa-shopping-cart text-xl"></i>
+                        <span id="cart-badge" class="absolute -top-2 -right-2 bg-primary-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                    </button>
+                    
+                    <div id="auth-buttons" class="flex items-center space-x-3">
+                        <button onclick="app.openAuthModal('login')" class="text-slate-600 hover:text-primary-600 font-medium">Sign In</button>
+                        <button onclick="app.openAuthModal('register')" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition shadow-sm">Sign Up</button>
+                    </div>
+
+                    <div id="user-menu" class="hidden relative">
+                        <button onclick="app.toggleUserDropdown()" class="flex items-center space-x-2 text-slate-700 hover:text-primary-600">
+                            <div id="user-avatar-container" class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm">
+                                U
+                            </div>
+                            <span id="user-name" class="font-medium text-sm">User</span>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                            <a onclick="router.navigate('profile')" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">My Profile</a>
+                            <a onclick="router.navigate('orders')" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 cursor-pointer">My Orders</a>
+                            <div id="admin-link" class="hidden border-t border-slate-200 mt-2 pt-2">
+                                <a onclick="router.navigate('admin')" class="block px-4 py-2 text-sm text-primary-600 hover:bg-slate-50 cursor-pointer">
+                                    <i class="fas fa-cog mr-2"></i>Admin Panel
+                                </a>
+                            </div>
+                            <div class="border-t border-slate-200 mt-2 pt-2">
+                                <a onclick="auth.logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-50 cursor-pointer">Sign Out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button onclick="app.toggleMobileMenu()" class="text-slate-600 hover:text-slate-900">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="mobile-menu fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-slate-900 bg-opacity-50" onclick="app.toggleMobileMenu()"></div>
+        <div class="w-64 bg-white h-full shadow-xl relative z-10">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                <span class="font-bold text-xl text-primary-600">SnapCart</span>
+                <button onclick="app.toggleMobileMenu()" class="text-slate-500"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-4 space-y-3">
+                <input type="text" placeholder="Search..." class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-4" onkeypress="if(event.key === 'Enter') { app.handleSearch(this.value); app.toggleMobileMenu(); }">
+                <a onclick="router.navigate('home'); app.toggleMobileMenu()" class="block py-2 text-slate-700 font-medium">Home</a>
+                <a onclick="router.navigate('shop'); app.toggleMobileMenu()" class="block py-2 text-slate-700 font-medium">Shop</a>
+                <a onclick="app.toggleCart(); app.toggleMobileMenu()" class="block py-2 text-slate-700 font-medium">Cart</a>
+                <div id="mobile-auth-links">
+                    <a onclick="app.openAuthModal('login'); app.toggleMobileMenu()" class="block py-2 text-primary-600 font-medium">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Sidebar -->
+    <div id="cart-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 hidden" onclick="app.toggleCart()"></div>
+    <div id="cart-sidebar" class="cart-sidebar fixed top-0 right-0 h-full w-full sm:w-96 bg-white shadow-2xl z-50 flex flex-col">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-gradient-to-r from-primary-50 to-white">
+            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <i class="fas fa-shopping-bag text-primary-600"></i> My Cart
+            </h2>
+            <button onclick="app.toggleCart()" class="text-slate-500 hover:text-slate-700"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div id="cart-items" class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-4">
+            <div class="text-center text-slate-500 mt-8">
+                <i class="fas fa-shopping-basket text-4xl mb-2 opacity-50"></i>
+                <p>Your cart is empty</p>
+            </div>
+        </div>
+        <div class="p-4 border-t border-slate-200 bg-slate-50">
+            <div class="flex justify-between mb-2 text-sm">
+                <span class="text-slate-600">Subtotal</span>
+                <span id="cart-subtotal" class="font-medium">₹0</span>
+            </div>
+            <div class="flex justify-between mb-4 text-lg font-bold">
+                <span>Total</span>
+                <span id="cart-total">₹0</span>
+            </div>
+            <button onclick="app.proceedToCheckout()" id="checkout-btn" disabled class="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md">
+                Place Order
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main id="app-container" class="pt-16 min-h-screen">
+        <!-- Dynamic content loads here -->
+    </main>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-shopping-bag text-primary-600 text-2xl"></i>
+                        <h2 id="auth-title" class="text-2xl font-bold text-slate-900">Welcome to SnapCart</h2>
+                    </div>
+                    <button onclick="app.closeAuthModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                
+                <form id="auth-form" onsubmit="auth.handleSubmit(event)" class="space-y-4">
+                    <div id="name-field" class="hidden">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                        <input type="text" name="name" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                        <input type="email" name="email" required class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" name="password" required minlength="8" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="••••••••">
+                            <button type="button" onclick="app.togglePasswordVisibility(this)" class="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Must be at least 8 characters</p>
+                    </div>
+                    
+                    <div class="hidden">
+                        <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    </div>
+
+                    <button type="submit" id="auth-submit" class="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition shadow-md flex justify-center items-center gap-2">
+                        <span>Continue</span>
+                        <div id="auth-loader" class="loader hidden" style="width: 16px; height: 16px; border-width: 2px;"></div>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-slate-600">
+                        <span id="auth-switch-text">Don't have an account?</span>
+                        <button onclick="auth.switchMode()" id="auth-switch-btn" class="text-primary-600 font-medium hover:text-primary-700 ml-1">Sign Up</button>
+                    </p>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-slate-200">
+                    <p class="text-xs text-slate-500 text-center mb-3">Demo Accounts (Click to Login)</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="auth.quickLogin('customer')" class="text-xs px-3 py-2 bg-slate-100 rounded-lg hover:bg-primary-50 hover:text-primary-600 text-slate-700 transition border border-slate-200">
+                            <i class="fas fa-user mr-1"></i> Customer
+                        </button>
+                        <button onclick="auth.quickLogin('admin')" class="text-xs px-3 py-2 bg-slate-100 rounded-lg hover:bg-primary-50 hover:text-primary-600 text-slate-700 transition border border-slate-200">
+                            <i class="fas fa-user-shield mr-1"></i> Admin
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-90 z-50 hidden flex items-center justify-center">
+        <div class="text-center">
+            <div class="loader w-12 h-12 border-4 border-primary-600 mb-4 mx-auto"></div>
+            <p class="text-slate-600 font-medium">Processing...</p>
+        </div>
+    </div>
+
+    <script>
+        // Currency Formatter for INR
+        const CurrencyFormatter = {
+            format(amount) {
+                return '₹' + amount.toLocaleString('en-IN', {
+                    maximumFractionDigits: 0,
+                    minimumFractionDigits: 0
+                });
+            },
+            formatWithDecimal(amount) {
+                return '₹' + amount.toLocaleString('en-IN', {
+                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 2
+                });
+            }
+        };
+
+        // Security Utilities
+        const Security = {
+            sanitizeInput(input) {
+                if (typeof input !== 'string') return input;
+                return input.replace(/[<>]/g, '').trim();
+            },
+            validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            },
+            validatePassword(password) {
+                return password.length >= 8;
+            },
+            generateToken() {
+                return 'token_' + Math.random().toString(36).substr(2) + Date.now();
+            },
+            hashPassword(password) {
+                return btoa(password + 'salt_snapcart_2024');
+            }
+        };
+
+        // Data Repository
+        const Repository = {
+            db: {
+                users: JSON.parse(localStorage.getItem('snapcart_users')) || [
+                    { id: 1, email: 'admin@snapcart.com', password: Security.hashPassword('admin123'), name: 'Admin User', role: 'admin' },
+                    { id: 2, email: 'customer@snapcart.com', password: Security.hashPassword('customer123'), name: 'Rahul Sharma', role: 'customer' }
+                ],
+                products: JSON.parse(localStorage.getItem('snapcart_products')) || [],
+                orders: JSON.parse(localStorage.getItem('snapcart_orders')) || [],
+                categories: [
+                    { id: 'electronics', name: 'Electronics', icon: 'fa-laptop' },
+                    { id: 'fashion', name: 'Fashion', icon: 'fa-tshirt' },
+                    { id: 'home', name: 'Home & Living', icon: 'fa-home' },
+                    { id: 'sports', name: 'Sports & Fitness', icon: 'fa-running' },
+                    { id: 'books', name: 'Books & Stationery', icon: 'fa-book' },
+                    { id: 'mobiles', name: 'Mobiles & Accessories', icon: 'fa-mobile-alt' }
+                ]
+            },
+
+            init() {
+                if (this.db.products.length === 0) {
+                    this.seedProducts();
+                }
+            },
+
+            seedProducts() {
+                const sampleProducts = [
+                    // Electronics
+                    { id: 1, name: 'Sony WH-1000XM4 Headphones', price: 24999, category: 'electronics', rating: 4.8, image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop', description: 'Industry-leading noise cancellation with 30-hour battery life.', stock: 15, sales: 234 },
+                    { id: 2, name: 'MacBook Air M2', price: 114900, category: 'electronics', rating: 4.9, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca4?w=500&h=500&fit=crop', description: 'Supercharged by M2 chip. 13.6-inch Liquid Retina display.', stock: 8, sales: 89 },
+                    { id: 3, name: 'Samsung 27" 4K Monitor', price: 32999, category: 'electronics', rating: 4.5, image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=500&h=500&fit=crop', description: 'Crystal clear UHD display with HDR10 support.', stock: 12, sales: 156 },
+                    { id: 4, name: 'Logitech MX Master 3S', price: 8999, category: 'electronics', rating: 4.7, image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&h=500&fit=crop', description: 'Wireless performance mouse with 8K DPI tracking.', stock: 45, sales: 678 },
+                    { id: 5, name: 'Keychron K2 Mechanical Keyboard', price: 8499, category: 'electronics', rating: 4.6, image: 'https://images.unsplash.com/photo-1595225476474-87563907a212?w=500&h=500&fit=crop', description: 'Wireless mechanical keyboard with RGB backlight.', stock: 23, sales: 445 },
+                    
+                    // Mobiles
+                    { id: 6, name: 'iPhone 15 Pro Max', price: 159900, category: 'mobiles', rating: 4.9, image: 'https://images.unsplash.com/photo-1696446701796-da61225697cc?w=500&h=500&fit=crop', description: 'Titanium design. A17 Pro chip. 48MP camera system.', stock: 20, sales: 512 },
+                    { id: 7, name: 'Samsung Galaxy S24 Ultra', price: 129999, category: 'mobiles', rating: 4.8, image: 'https://images.unsplash.com/photo-1610945265078-3858a0828671?w=500&h=500&fit=crop', description: '200MP camera with AI features. S Pen included.', stock: 18, sales: 334 },
+                    { id: 8, name: 'Nothing Phone 2', price: 44999, category: 'mobiles', rating: 4.4, image: 'https://images.unsplash.com/photo-1598327775663-27d4c9b3d8a9?w=500&h=500&fit=crop', description: 'Unique Glyph Interface. 50MP dual camera.', stock: 35, sales: 289 },
+                    { id: 9, name: 'OnePlus 12', price: 64999, category: 'mobiles', rating: 4.6, image: 'https://images.unsplash.com/photo-1660463977530-0d32910c48e3?w=500&h=500&fit=crop', description: 'Snapdragon 8 Gen 3. Hasselblad camera.', stock: 25, sales: 401 },
+                    { id: 10, name: 'iPad Air 5', price: 59900, category: 'mobiles', rating: 4.7, image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=500&h=500&fit=crop', description: 'M1 chip. 10.9-inch Liquid Retina display.', stock: 30, sales: 223 },
+                    
+                    // Fashion
+                    { id: 11, name: 'Nike Air Max 270', price: 12995, category: 'fashion', rating: 4.5, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&h=500&fit=crop', description: 'Maximum air cushioning with breathable mesh.', stock: 42, sales: 892 },
+                    { id: 12, name: 'Levi\'s 511 Slim Fit Jeans', price: 2999, category: 'fashion', rating: 4.3, image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&h=500&fit=crop', description: 'Classic slim fit with stretch comfort.', stock: 100, sales: 1203 },
+                    { id: 13, name: 'Fossil Gen 6 Smartwatch', price: 22995, category: 'fashion', rating: 4.4, image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&h=500&fit=crop', description: 'WearOS smartwatch with SpO2 and heart rate.', stock: 15, sales: 167 },
+                    { id: 14, name: 'Ray-Ban Aviator Classic', price: 8290, category: 'fashion', rating: 4.7, image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&h=500&fit=crop', description: 'Iconic gold frame with green G-15 lenses.', stock: 28, sales: 445 },
+                    { id: 15, name: 'Adidas Running Jacket', price: 4599, category: 'fashion', rating: 4.2, image: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&h=500&fit=crop', description: 'Water-repellent windbreaker for runners.', stock: 35, sales: 234 },
+                    { id: 16, name: 'Classic Leather Wallet', price: 1299, category: 'fashion', rating: 4.6, image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=500&h=500&fit=crop', description: 'Genuine leather with RFID protection.', stock: 80, sales: 567 },
+                    
+                    // Home & Living
+                    { id: 17, name: 'Dyson V12 Vacuum', price: 49900, category: 'home', rating: 4.8, image: 'https://images.unsplash.com/photo-1558317374-a354d5f6d40b?w=500&h=500&fit=crop', description: 'Laser detect technology. 60-minute run time.', stock: 10, sales: 89 },
+                    { id: 18, name: 'Philips Air Fryer HD9252', price: 8999, category: 'home', rating: 4.5, image: 'https://images.unsplash.com/photo-1626147116986-4601771470a6?w=500&h=500&fit=crop', description: 'Rapid Air technology. Touchscreen panel.', stock: 25, sales: 334 },
+                    { id: 19, name: 'Ikea POÄNG Armchair', price: 7999, category: 'home', rating: 4.6, image: 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?w=500&h=500&fit=crop', description: 'Classic bentwood frame with cushion.', stock: 18, sales: 156 },
+                    { id: 20, name: 'Ceramic Plant Pot Set', price: 1299, category: 'home', rating: 4.4, image: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=500&h=500&fit=crop', description: 'Set of 3 minimalist white ceramic pots.', stock: 50, sales: 423 },
+                    { id: 21, name: 'Wakefit Orthopedic Mattress', price: 12499, category: 'home', rating: 4.7, image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=500&h=500&fit=crop', description: 'Memory foam with 10-year warranty.', stock: 20, sales: 212 },
+                    
+                    // Sports
+                    { id: 22, name: 'Yonex Astrox 99 Badminton Racket', price: 17999, category: 'sports', rating: 4.9, image: 'https://images.unsplash.com/photo-1626224583764-8478ab2e1539?w=500&h=500&fit=crop', description: 'Professional grade racket for power smashes.', stock: 15, sales: 123 },
+                    { id: 23, name: 'Decathlon Road Bike RC 120', price: 29999, category: 'sports', rating: 4.5, image: 'https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?w=500&h=500&fit=crop', description: 'Aluminum frame with carbon fork. 16 speeds.', stock: 8, sales: 67 },
+                    { id: 24, name: 'Strauss Yoga Mat 6mm', price: 899, category: 'sports', rating: 4.3, image: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=500&h=500&fit=crop', description: 'Anti-slip with carrying strap.', stock: 100, sales: 1543 },
+                    { id: 25, name: 'Bowflex SelectTech 552 Dumbbells', price: 34999, category: 'sports', rating: 4.8, image: 'https://images.unsplash.com/photo-1638536532686-d610adfc8e5c?w=500&h=500&fit=crop', description: 'Adjustable from 2.5 to 24 kg. Space saving.', stock: 12, sales: 98 },
+                    
+                    // Books
+                    { id: 26, name: 'Atomic Habits - James Clear', price: 499, category: 'books', rating: 4.9, image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=500&h=500&fit=crop', description: 'Transform your life with tiny changes.', stock: 200, sales: 2500 },
+                    { id: 27, name: 'The Psychology of Money', price: 399, category: 'books', rating: 4.7, image: 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=500&h=500&fit=crop', description: 'Timeless lessons on wealth and happiness.', stock: 150, sales: 1800 },
+                    { id: 28, name: 'Moleskine Classic Notebook', price: 1299, category: 'books', rating: 4.6, image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=500&h=500&fit=crop', description: 'Hard cover with elastic closure.', stock: 80, sales: 445 },
+                    { id: 29, name: 'Rich Dad Poor Dad', price: 299, category: 'books', rating: 4.5, image: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=500&h=500&fit=crop', description: 'What the rich teach their kids about money.', stock: 120, sales: 3200 },
+                    { id: 30, name: 'Python Programming Book', price: 899, category: 'books', rating: 4.4, image: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=500&h=500&fit=crop', description: 'Complete guide from beginner to advanced.', stock: 75, sales: 567 }
+                ];
+                this.db.products = sampleProducts;
+                this.persist();
+            },
+
+            persist() {
+                localStorage.setItem('snapcart_products', JSON.stringify(this.db.products));
+                localStorage.setItem('snapcart_orders', JSON.stringify(this.db.orders));
+                localStorage.setItem('snapcart_users', JSON.stringify(this.db.users));
+            },
+
+            getProducts(filters = {}) {
+                let products = [...this.db.products];
+                
+                if (filters.category && filters.category !== 'all') {
+                    products = products.filter(p => p.category === filters.category);
+                }
+                
+                if (filters.search) {
+                    const search = filters.search.toLowerCase();
+                    products = products.filter(p => 
+                        p.name.toLowerCase().includes(search) || 
+                        p.description.toLowerCase().includes(search)
+                    );
+                }
+                
+                if (filters.maxPrice) {
+                    products = products.filter(p => p.price <= parseInt(filters.maxPrice));
+                }
+                
+                if (filters.minRating) {
+                    products = products.filter(p => p.rating >= parseInt(filters.minRating));
+                }
+                
+                if (filters.sort) {
+                    switch(filters.sort) {
+                        case 'price-low': products.sort((a, b) => a.price - b.price); break;
+                        case 'price-high': products.sort((a, b) => b.price - a.price); break;
+                        case 'rating': products.sort((a, b) => b.rating - a.rating); break;
+                        case 'newest': default: products.sort((a, b) => b.id - a.id); break;
+                    }
+                }
+                
+                return products;
+            },
+
+            getProduct(id) {
+                return this.db.products.find(p => p.id === parseInt(id));
+            },
+
+            updateProduct(id, data) {
+                const idx = this.db.products.findIndex(p => p.id === parseInt(id));
+                if (idx !== -1) {
+                    this.db.products[idx] = { ...this.db.products[idx], ...data };
+                    this.persist();
+                    return this.db.products[idx];
+                }
+                return null;
+            },
+
+            createProduct(data) {
+                const newProduct = {
+                    id: Date.now(),
+                    ...data,
+                    sales: 0,
+                    rating: 0
+                };
+                this.db.products.push(newProduct);
+                this.persist();
+                return newProduct;
+            },
+
+            deleteProduct(id) {
+                this.db.products = this.db.products.filter(p => p.id !== parseInt(id));
+                this.persist();
+            },
+
+            getCategories() {
+                return this.db.categories;
+            },
+
+            createOrder(orderData) {
+                const order = {
+                    id: 'ORD-' + Date.now(),
+                    ...orderData,
+                    status: 'processing',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                this.db.orders.push(order);
+                this.persist();
+                return order;
+            },
+
+            getOrders(userId = null) {
+                if (userId) {
+                    return this.db.orders.filter(o => o.userId === userId).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                }
+                return this.db.orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            },
+
+            updateOrderStatus(orderId, status) {
+                const order = this.db.orders.find(o => o.id === orderId);
+                if (order) {
+                    order.status = status;
+                    order.updatedAt = new Date().toISOString();
+                    this.persist();
+                    return order;
+                }
+                return null;
+            },
+
+            getUserByEmail(email) {
+                return this.db.users.find(u => u.email === email);
+            },
+
+            createUser(userData) {
+                const user = {
+                    id: Date.now(),
+                    ...userData,
+                    role: 'customer'
+                };
+                this.db.users.push(user);
+                this.persist();
+                return user;
+            }
+        };
+
+        // Cart Service
+        const CartService = {
+            items: JSON.parse(sessionStorage.getItem('snapcart_cart')) || [],
+
+            persist() {
+                sessionStorage.setItem('snapcart_cart', JSON.stringify(this.items));
+                this.updateUI();
+            },
+
+            addItem(product, quantity = 1) {
+                const existing = this.items.find(item => item.productId === product.id);
+                if (existing) {
+                    existing.quantity += quantity;
+                } else {
+                    this.items.push({
+                        productId: product.id,
+                        name: product.name,
+                        price: product.price,
+                        image: product.image,
+                        quantity: quantity
+                    });
+                }
+                this.persist();
+                app.showToast(`${product.name} added to cart`, 'success');
+            },
+
+            removeItem(productId) {
+                this.items = this.items.filter(item => item.productId !== productId);
+                this.persist();
+            },
+
+            updateQuantity(productId, quantity) {
+                const item = this.items.find(item => item.productId === productId);
+                if (item) {
+                    if (quantity <= 0) {
+                        this.removeItem(productId);
+                    } else {
+                        item.quantity = quantity;
+                        this.persist();
+                    }
+                }
+            },
+
+            clear() {
+                this.items = [];
+                this.persist();
+            },
+
+            getTotal() {
+                return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            },
+
+            getCount() {
+                return this.items.reduce((sum, item) => sum + item.quantity, 0);
+            },
+
+            updateUI() {
+                const badge = document.getElementById('cart-badge');
+                const count = this.getCount();
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        };
+
+        // Auth Service
+        const auth = {
+            currentUser: JSON.parse(sessionStorage.getItem('snapcart_user')) || null,
+            token: sessionStorage.getItem('snapcart_token') || null,
+
+            init() {
+                if (this.currentUser) {
+                    this.updateUI();
+                }
+            },
+
+            async handleSubmit(e) {
+                e.preventDefault();
+                const form = e.target;
+                const mode = form.dataset.mode || 'login';
+                const submitBtn = document.getElementById('auth-submit');
+                const loader = document.getElementById('auth-loader');
+                
+                if (form.website.value) {
+                    console.warn('Bot detected');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                loader.classList.remove('hidden');
+
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 800));
+
+                    const email = Security.sanitizeInput(form.email.value);
+                    const password = form.password.value;
+
+                    if (!Security.validateEmail(email)) {
+                        throw new Error('Invalid email format');
+                    }
+
+                    if (mode === 'register') {
+                        if (!Security.validatePassword(password)) {
+                            throw new Error('Password must be 8+ characters');
+                        }
+                        
+                        const name = Security.sanitizeInput(form.name.value);
+                        if (!name) throw new Error('Name is required');
+
+                        const existing = Repository.getUserByEmail(email);
+                        if (existing) throw new Error('Account already exists');
+
+                        const user = Repository.createUser({
+                            email,
+                            password: Security.hashPassword(password),
+                            name
+                        });
+
+                        this.login(user);
+                        app.showToast('Account created successfully!', 'success');
+                    } else {
+                        const user = Repository.getUserByEmail(email);
+                        if (!user || user.password !== Security.hashPassword(password)) {
+                            throw new Error('Invalid credentials');
+                        }
+                        
+                        this.login(user);
+                        app.showToast('Welcome back!', 'success');
+                    }
+                    
+                    app.closeAuthModal();
+                } catch (error) {
+                    app.showToast(error.message, 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    loader.classList.add('hidden');
+                }
+            },
+
+            login(user) {
+                this.currentUser = user;
+                this.token = Security.generateToken();
+                sessionStorage.setItem('snapcart_user', JSON.stringify(user));
+                sessionStorage.setItem('snapcart_token', this.token);
+                this.updateUI();
+                
+                if (user.role === 'admin') {
+                    router.navigate('admin');
+                }
+            },
+
+            logout() {
+                this.currentUser = null;
+                this.token = null;
+                sessionStorage.removeItem('snapcart_user');
+                sessionStorage.removeItem('snapcart_token');
+                this.updateUI();
+                router.navigate('home');
+                app.showToast('Logged out successfully');
+            },
+
+            quickLogin(role) {
+                const email = role === 'admin' ? 'admin@snapcart.com' : 'customer@snapcart.com';
+                const user = Repository.getUserByEmail(email);
+                this.login(user);
+                app.closeAuthModal();
+            },
+
+            updateUI() {
+                const authButtons = document.getElementById('auth-buttons');
+                const userMenu = document.getElementById('user-menu');
+                const mobileAuth = document.getElementById('mobile-auth-links');
+                
+                if (this.currentUser) {
+                    authButtons.classList.add('hidden');
+                    userMenu.classList.remove('hidden');
+                    if (mobileAuth) mobileAuth.innerHTML = `<a onclick="auth.logout()" class="block py-2 text-red-600 font-medium">Sign Out</a>`;
+                    
+                    document.getElementById('user-name').textContent = this.currentUser.name;
+                    const avatarContainer = document.getElementById('user-avatar-container');
+                    avatarContainer.textContent = this.currentUser.name.charAt(0).toUpperCase();
+                    
+                    if (this.currentUser.role === 'admin') {
+                        document.getElementById('admin-link').classList.remove('hidden');
+                    } else {
+                        document.getElementById('admin-link').classList.add('hidden');
+                    }
+                } else {
+                    authButtons.classList.remove('hidden');
+                    userMenu.classList.add('hidden');
+                    if (mobileAuth) mobileAuth.innerHTML = `<a onclick="app.openAuthModal('login'); app.toggleMobileMenu()" class="block py-2 text-primary-600 font-medium">Sign In</a>`;
+                }
+            },
+
+            switchMode() {
+                const form = document.getElementById('auth-form');
+                const title = document.getElementById('auth-title');
+                const nameField = document.getElementById('name-field');
+                const switchText = document.getElementById('auth-switch-text');
+                const switchBtn = document.getElementById('auth-switch-btn');
+                
+                if (form.dataset.mode === 'register') {
+                    form.dataset.mode = 'login';
+                    title.textContent = 'Welcome to SnapCart';
+                    nameField.classList.add('hidden');
+                    switchText.textContent = "Don't have an account?";
+                    switchBtn.textContent = 'Sign Up';
+                } else {
+                    form.dataset.mode = 'register';
+                    title.textContent = 'Create Account';
+                    nameField.classList.remove('hidden');
+                    switchText.textContent = "Already have an account?";
+                    switchBtn.textContent = 'Sign In';
+                }
+            },
+
+            requireAuth() {
+                if (!this.currentUser) {
+                    app.openAuthModal('login');
+                    return false;
+                }
+                return true;
+            },
+
+            requireAdmin() {
+                if (!this.currentUser || this.currentUser.role !== 'admin') {
+                    router.navigate('home');
+                    app.showToast('Access denied', 'error');
+                    return false;
+                }
+                return true;
+            }
+        };
+
+        // Router
+        const router = {
+            routes: {
+                'home': () => views.renderHome(),
+                'shop': (params) => views.renderShop(params),
+                'product': (id) => views.renderProductDetail(id),
+                'cart': () => { app.toggleCart(); router.navigate('shop'); },
+                'checkout': () => views.renderCheckout(),
+                'orders': () => { if(auth.requireAuth()) views.renderOrders(); },
+                'profile': () => { if(auth.requireAuth()) views.renderProfile(); },
+                'admin': () => { if(auth.requireAdmin()) views.renderAdmin(); }
+            },
+
+            currentRoute: null,
+
+            navigate(route, params = null) {
+                this.currentRoute = route;
+                window.scrollTo(0, 0);
+                
+                const url = params ? `#${route}/${params}` : `#${route}`;
+                history.pushState({route, params}, '', url);
+                
+                const renderFn = this.routes[route];
+                if (renderFn) {
+                    if (params) renderFn(params);
+                    else renderFn();
+                }
+                
+                document.getElementById('mobile-menu').classList.add('hidden');
+            },
+
+            init() {
+                window.addEventListener('popstate', (e) => {
+                    if (e.state) {
+                        const {route, params} = e.state;
+                        const renderFn = this.routes[route];
+                        if (renderFn) {
+                            if (params) renderFn(params);
+                            else renderFn();
+                        }
+                    } else {
+                        this.navigate('home');
+                    }
+                });
+
+                const hash = window.location.hash.slice(1) || 'home';
+                const [route, ...params] = hash.split('/');
+                if (this.routes[route]) {
+                    if (params.length) this.routes[route](params.join('/'));
+                    else this.routes[route]();
+                }
+            }
+        };
+
+        // Views
+        const views = {
+            container: document.getElementById('app-container'),
+
+            handleImageError(img) {
+                img.onerror = null;
+                img.src = `https://placehold.co/400x400/f97316/ffffff?text=${encodeURIComponent(img.alt || 'SnapCart')}`;
+                img.classList.add('error');
+            },
+
+            renderHome() {
+                const featured = Repository.getProducts({ sort: 'rating' }).slice(0, 4);
+                const categories = Repository.getCategories();
+                
+                this.container.innerHTML = `
+                    <div class="fade-in">
+                        <!-- Hero Section -->
+                        <div class="relative bg-gradient-to-r from-orange-500 to-red-600 overflow-hidden">
+                            <div class="absolute inset-0 opacity-20">
+                                <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1600&h=900&fit=crop" 
+                                     alt="Hero" 
+                                     class="w-full h-full object-cover"
+                                     onerror="views.handleImageError(this)">
+                            </div>
+                            <div class="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 text-center">
+                                <h1 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-6">
+                                    India's Favorite Shopping Destination
+                                </h1>
+                                <p class="mt-4 text-xl text-orange-100 max-w-2xl mx-auto mb-8">
+                                    Discover 30+ premium products at unbeatable prices. Fast delivery across India.
+                                </p>
+                                <button onclick="router.navigate('shop')" 
+                                        class="bg-white text-orange-600 px-8 py-4 rounded-full text-lg font-bold hover:bg-orange-50 transition transform hover:scale-105 shadow-lg">
+                                    Start Shopping <i class="fas fa-arrow-right ml-2"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Categories -->
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                            <h2 class="text-2xl font-bold text-slate-900 mb-8">Shop by Category</h2>
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                                ${categories.map(cat => `
+                                    <div onclick="router.navigate('shop', 'category=${cat.id}')" 
+                                         class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-primary-300 cursor-pointer transition text-center group">
+                                        <i class="fas ${cat.icon} text-3xl text-primary-600 mb-3 group-hover:scale-110 transition-transform"></i>
+                                        <h3 class="font-medium text-slate-900 text-sm">${cat.name}</h3>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Featured Products -->
+                        <div class="bg-slate-100 py-16">
+                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <div class="flex justify-between items-end mb-8">
+                                    <div>
+                                        <h2 class="text-2xl font-bold text-slate-900">Trending Now</h2>
+                                        <p class="text-slate-600 mt-1">Most loved by our customers</p>
+                                    </div>
+                                    <button onclick="router.navigate('shop')" class="text-primary-600 hover:text-primary-700 font-medium">View All Products</button>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    ${featured.map(product => this.createProductCard(product)).join('')}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Features -->
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 text-center">
+                                <div class="p-6">
+                                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-shipping-fast text-2xl text-primary-600"></i>
+                                    </div>
+                                    <h3 class="font-bold text-lg mb-2">Free Delivery</h3>
+                                    <p class="text-slate-600 text-sm">On orders above ₹499</p>
+                                </div>
+                                <div class="p-6">
+                                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-shield-alt text-2xl text-primary-600"></i>
+                                    </div>
+                                    <h3 class="font-bold text-lg mb-2">Secure Payments</h3>
+                                    <p class="text-slate-600 text-sm">100% secure checkout</p>
+                                </div>
+                                <div class="p-6">
+                                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-undo text-2xl text-primary-600"></i>
+                                    </div>
+                                    <h3 class="font-bold text-lg mb-2">Easy Returns</h3>
+                                    <p class="text-slate-600 text-sm">10-day return policy</p>
+                                </div>
+                                <div class="p-6">
+                                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <i class="fas fa-headset text-2xl text-primary-600"></i>
+                                    </div>
+                                    <h3 class="font-bold text-lg mb-2">24/7 Support</h3>
+                                    <p class="text-slate-600 text-sm">Dedicated support team</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderShop(params = '') {
+                const urlParams = new URLSearchParams(params);
+                const initialCategory = urlParams.get('category') || 'all';
+                
+                this.container.innerHTML = `
+                    <div class="bg-slate-50 min-h-screen fade-in">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            <div class="flex flex-col md:flex-row gap-8">
+                                <!-- Sidebar Filters -->
+                                <aside class="w-full md:w-64 flex-shrink-0">
+                                    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 sticky top-24">
+                                        <h3 class="font-bold text-lg mb-4">Filters</h3>
+                                        
+                                        <div class="mb-6">
+                                            <h4 class="font-medium text-sm text-slate-700 mb-2">Categories</h4>
+                                            <div class="space-y-2" id="category-filters">
+                                                <label class="flex items-center cursor-pointer">
+                                                    <input type="radio" name="category" value="all" 
+                                                           ${initialCategory === 'all' ? 'checked' : ''}
+                                                           onchange="app.filterByCategory('all')"
+                                                           class="text-primary-600 focus:ring-primary-500">
+                                                    <span class="ml-2 text-slate-600">All Products</span>
+                                                </label>
+                                                ${Repository.getCategories().map(cat => `
+                                                    <label class="flex items-center cursor-pointer">
+                                                        <input type="radio" name="category" value="${cat.id}" 
+                                                               ${cat.id === initialCategory ? 'checked' : ''}
+                                                               onchange="app.filterByCategory('${cat.id}')"
+                                                               class="text-primary-600 focus:ring-primary-500">
+                                                        <span class="ml-2 text-slate-600">${cat.name}</span>
+                                                    </label>
+                                                `).join('')}
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-6">
+                                            <h4 class="font-medium text-sm text-slate-700 mb-2">Price Range</h4>
+                                            <input type="range" min="0" max="200000" value="200000" step="1000"
+                                                   class="w-full accent-primary-600 mb-2"
+                                                   oninput="document.getElementById('price-display').textContent = '₹0 - ₹' + parseInt(this.value).toLocaleString('en-IN'); app.filters.maxPrice = this.value;">
+                                            <div id="price-display" class="text-sm text-slate-600 text-center">₹0 - ₹2,00,000</div>
+                                        </div>
+
+                                        <button onclick="app.applyFilters()" class="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition">
+                                            Apply Filters
+                                        </button>
+                                    </div>
+                                </aside>
+
+                                <!-- Product Grid -->
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-center mb-6">
+                                        <h1 class="text-2xl font-bold text-slate-900">All Products</h1>
+                                        <div class="flex items-center gap-4">
+                                            <span class="text-sm text-slate-600" id="product-count">Loading...</span>
+                                            <select onchange="app.sortProducts(this.value)" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500">
+                                                <option value="newest">Newest</option>
+                                                <option value="price-low">Price: Low to High</option>
+                                                <option value="price-high">Price: High to Low</option>
+                                                <option value="rating">Highest Rated</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <div class="col-span-full text-center py-12">
+                                            <div class="loader mx-auto mb-4"></div>
+                                            <p class="text-slate-500">Loading products...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    app.loadProducts({ category: initialCategory });
+                }, 300);
+            },
+
+            renderProductDetail(id) {
+                const product = Repository.getProduct(id);
+                if (!product) {
+                    router.navigate('shop');
+                    return;
+                }
+
+                const related = Repository.getProducts({ category: product.category })
+                    .filter(p => p.id !== product.id)
+                    .slice(0, 4);
+
+                this.container.innerHTML = `
+                    <div class="bg-white fade-in">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            <nav class="text-sm text-slate-500 mb-8">
+                                <span class="cursor-pointer hover:text-primary-600" onclick="router.navigate('home')">Home</span>
+                                <i class="fas fa-chevron-right mx-2 text-xs"></i>
+                                <span class="cursor-pointer hover:text-primary-600" onclick="router.navigate('shop')">Shop</span>
+                                <i class="fas fa-chevron-right mx-2 text-xs"></i>
+                                <span class="text-slate-900">${Security.sanitizeInput(product.name)}</span>
+                            </nav>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
+                                <!-- Product Image -->
+                                <div class="space-y-4">
+                                    <div class="aspect-w-1 aspect-h-1 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
+                                        <img src="${product.image}" 
+                                             alt="${Security.sanitizeInput(product.name)}" 
+                                             class="w-full h-[500px] object-cover"
+                                             onerror="views.handleImageError(this)">
+                                    </div>
+                                </div>
+
+                                <!-- Product Info -->
+                                <div class="space-y-6">
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="bg-primary-100 text-primary-700 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                                ${Repository.getCategories().find(c => c.id === product.category)?.name || product.category}
+                                            </span>
+                                            ${product.stock < 10 ? '<span class="bg-red-100 text-red-700 text-xs font-medium px-2.5 py-0.5 rounded-full">Only ' + product.stock + ' left</span>' : ''}
+                                        </div>
+                                        <h1 class="text-3xl font-bold text-slate-900 mb-2">${Security.sanitizeInput(product.name)}</h1>
+                                        <div class="flex items-center gap-4">
+                                            <div class="flex items-center text-yellow-400">
+                                                ${this.renderStars(product.rating)}
+                                            </div>
+                                            <span class="text-slate-500 text-sm">(${product.sales} sold)</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-4xl font-bold text-slate-900">
+                                        ${CurrencyFormatter.format(product.price)}
+                                    </div>
+
+                                    <p class="text-slate-600 leading-relaxed">
+                                        ${Security.sanitizeInput(product.description)}
+                                    </p>
+
+                                    <div class="border-t border-b border-slate-200 py-6 space-y-4">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-slate-600">Availability</span>
+                                            <span class="${product.stock > 0 ? 'text-green-600' : 'text-red-600'} font-medium">
+                                                ${product.stock > 0 ? `In Stock` : 'Out of Stock'}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-slate-600">Delivery</span>
+                                            <span class="text-green-600 font-medium">Free delivery by tomorrow</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex items-center border border-slate-300 rounded-lg">
+                                            <button onclick="app.adjustDetailQuantity(-1)" class="px-4 py-2 text-slate-600 hover:bg-slate-100 transition">-</button>
+                                            <input type="number" id="detail-quantity" value="1" min="1" max="${product.stock}" 
+                                                   class="w-16 text-center border-x border-slate-300 py-2 focus:outline-none">
+                                            <button onclick="app.adjustDetailQuantity(1)" class="px-4 py-2 text-slate-600 hover:bg-slate-100 transition">+</button>
+                                        </div>
+                                        <button onclick="app.addToCartFromDetail(${product.id})" 
+                                                ${product.stock === 0 ? 'disabled' : ''}
+                                                class="flex-1 bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md flex items-center justify-center gap-2">
+                                            <i class="fas fa-shopping-cart"></i>
+                                            Add to Cart
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${related.length > 0 ? `
+                                <div class="border-t border-slate-200 pt-12">
+                                    <h2 class="text-2xl font-bold text-slate-900 mb-6">Similar Products</h2>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        ${related.map(p => this.createProductCard(p)).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderCheckout() {
+                if (CartService.items.length === 0) {
+                    router.navigate('shop');
+                    app.showToast('Your cart is empty', 'error');
+                    return;
+                }
+
+                const subtotal = CartService.getTotal();
+                const tax = subtotal * 0.18; // GST 18%
+                const delivery = subtotal > 499 ? 0 : 99;
+                const total = subtotal + tax + delivery;
+
+                this.container.innerHTML = `
+                    <div class="bg-slate-50 min-h-screen fade-in py-8">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex items-center mb-8">
+                                <button onclick="router.navigate('shop')" class="text-slate-600 hover:text-slate-900 mr-4">
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <h1 class="text-2xl font-bold text-slate-900">Secure Checkout</h1>
+                            </div>
+
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div class="space-y-6">
+                                    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                        <h3 class="text-lg font-bold mb-4">Delivery Address</h3>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <input type="text" placeholder="Full Name" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500" required>
+                                            <input type="tel" placeholder="Mobile Number" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500" required>
+                                            <input type="text" placeholder="Pincode" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500" required>
+                                            <input type="text" placeholder="City" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500" required>
+                                            <input type="text" placeholder="Street Address" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 md:col-span-2" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                        <h3 class="text-lg font-bold mb-4">Payment Method</h3>
+                                        <div class="space-y-3">
+                                            <label class="flex items-center gap-3 p-4 border-2 border-primary-600 bg-primary-50 rounded-lg cursor-pointer">
+                                                <input type="radio" name="payment" checked class="text-primary-600">
+                                                <div>
+                                                    <div class="font-medium">Credit/Debit Card</div>
+                                                    <div class="text-sm text-slate-500">Pay securely with your card</div>
+                                                </div>
+                                            </label>
+                                            <label class="flex items-center gap-3 p-4 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                                                <input type="radio" name="payment" class="text-primary-600">
+                                                <div>
+                                                    <div class="font-medium">UPI</div>
+                                                    <div class="text-sm text-slate-500">Google Pay, PhonePe, Paytm</div>
+                                                </div>
+                                            </label>
+                                            <label class="flex items-center gap-3 p-4 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-50">
+                                                <input type="radio" name="payment" class="text-primary-600">
+                                                <div>
+                                                    <div class="font-medium">Cash on Delivery</div>
+                                                    <div class="text-sm text-slate-500">Pay when you receive</div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="lg:sticky lg:top-24 h-fit">
+                                    <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                        <h3 class="text-lg font-bold mb-4">Order Summary</h3>
+                                        <div class="space-y-4 mb-6 max-h-64 overflow-y-auto custom-scrollbar">
+                                            ${CartService.items.map(item => `
+                                                <div class="flex gap-4">
+                                                    <img src="${item.image}" class="w-16 h-16 object-cover rounded-md" onerror="views.handleImageError(this)">
+                                                    <div class="flex-1">
+                                                        <h4 class="text-sm font-medium text-slate-900 line-clamp-1">${item.name}</h4>
+                                                        <p class="text-sm text-slate-500">Qty: ${item.quantity}</p>
+                                                        <p class="text-sm font-medium">${CurrencyFormatter.format(item.price * item.quantity)}</p>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                        
+                                        <div class="border-t border-slate-200 pt-4 space-y-2">
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-slate-600">Subtotal</span>
+                                                <span class="font-medium">${CurrencyFormatter.format(subtotal)}</span>
+                                            </div>
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-slate-600">GST (18%)</span>
+                                                <span class="font-medium">${CurrencyFormatter.format(tax)}</span>
+                                            </div>
+                                            <div class="flex justify-between text-sm">
+                                                <span class="text-slate-600">Delivery</span>
+                                                <span class="${delivery === 0 ? 'text-green-600' : ''} font-medium">${delivery === 0 ? 'FREE' : CurrencyFormatter.format(delivery)}</span>
+                                            </div>
+                                            <div class="border-t border-slate-200 pt-2 flex justify-between text-lg font-bold">
+                                                <span>Total</span>
+                                                <span>${CurrencyFormatter.format(total)}</span>
+                                            </div>
+                                        </div>
+
+                                        <button onclick="app.processCheckout()" class="w-full mt-6 bg-primary-600 text-white py-4 rounded-lg font-medium hover:bg-primary-700 transition shadow-lg flex items-center justify-center gap-2">
+                                            <i class="fas fa-lock"></i>
+                                            Pay ${CurrencyFormatter.format(total)}
+                                        </button>
+                                        
+                                        <div class="mt-4 flex justify-center gap-4 text-xs text-slate-500">
+                                            <span class="flex items-center gap-1"><i class="fas fa-shield-alt text-green-600"></i> Secure SSL</span>
+                                            <span class="flex items-center gap-1"><i class="fas fa-undo text-green-600"></i> Easy Returns</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderOrders() {
+                const orders = Repository.getOrders(auth.currentUser.id);
+                
+                this.container.innerHTML = `
+                    <div class="bg-slate-50 min-h-screen fade-in py-8">
+                        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <h1 class="text-2xl font-bold text-slate-900 mb-8">My Orders</h1>
+                            
+                            ${orders.length === 0 ? `
+                                <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-12 text-center">
+                                    <i class="fas fa-box-open text-6xl text-slate-300 mb-4"></i>
+                                    <h3 class="text-lg font-medium text-slate-900 mb-2">No orders yet</h3>
+                                    <p class="text-slate-500 mb-6">Start shopping to see your orders here</p>
+                                    <button onclick="router.navigate('shop')" class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition">
+                                        Start Shopping
+                                    </button>
+                                </div>
+                            ` : `
+                                <div class="space-y-6">
+                                    ${orders.map(order => `
+                                        <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                                            <div class="p-6 border-b border-slate-200 bg-slate-50 flex flex-wrap justify-between items-center gap-4">
+                                                <div>
+                                                    <p class="text-sm text-slate-500">Order Placed</p>
+                                                    <p class="font-medium">${new Date(order.createdAt).toLocaleDateString('en-IN')}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm text-slate-500">Order ID</p>
+                                                    <p class="font-medium font-mono text-sm">${order.id}</p>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm text-slate-500">Total</p>
+                                                    <p class="font-bold">${CurrencyFormatter.format(order.total)}</p>
+                                                </div>
+                                                <div>
+                                                    <span class="px-3 py-1 rounded-full text-sm font-medium ${
+                                                        order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                                        order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                                                        order.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-slate-100 text-slate-700'
+                                                    }">
+                                                        ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="p-6">
+                                                <div class="space-y-4">
+                                                    ${order.items.map(item => `
+                                                        <div class="flex gap-4">
+                                                            <img src="${item.image}" class="w-20 h-20 object-cover rounded-md" onerror="views.handleImageError(this)">
+                                                            <div class="flex-1">
+                                                                <h4 class="font-medium text-slate-900">${item.name}</h4>
+                                                                <p class="text-sm text-slate-500">Qty: ${item.quantity} × ${CurrencyFormatter.format(item.price)}</p>
+                                                            </div>
+                                                            <div class="font-medium">
+                                                                ${CurrencyFormatter.format(item.price * item.quantity)}
+                                                            </div>
+                                                        </div>
+                                                    `).join('')}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderAdmin() {
+                const orders = Repository.getOrders();
+                const products = Repository.getProducts();
+                const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+                
+                this.container.innerHTML = `
+                    <div class="bg-slate-50 min-h-screen fade-in">
+                        <div class="bg-white border-b border-slate-200">
+                            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2">
+                                        <i class="fas fa-shopping-bag text-primary-600 text-2xl"></i>
+                                        <h1 class="text-2xl font-bold text-slate-900">SnapCart Admin</h1>
+                                    </div>
+                                    <button onclick="app.openAddProductModal()" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition flex items-center gap-2">
+                                        <i class="fas fa-plus"></i> Add Product
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-slate-500">Total Revenue</p>
+                                            <p class="text-2xl font-bold text-slate-900">${CurrencyFormatter.format(totalRevenue)}</p>
+                                        </div>
+                                        <i class="fas fa-rupee-sign text-3xl text-green-500"></i>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-slate-500">Total Orders</p>
+                                            <p class="text-2xl font-bold text-slate-900">${orders.length}</p>
+                                        </div>
+                                        <i class="fas fa-shopping-bag text-3xl text-blue-500"></i>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-slate-500">Products</p>
+                                            <p class="text-2xl font-bold text-slate-900">${products.length}</p>
+                                        </div>
+                                        <i class="fas fa-box text-3xl text-purple-500"></i>
+                                    </div>
+                                </div>
+                                <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-slate-500">Customers</p>
+                                            <p class="text-2xl font-bold text-slate-900">${Repository.db.users.filter(u => u.role === 'customer').length}</p>
+                                        </div>
+                                        <i class="fas fa-users text-3xl text-orange-500"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-lg shadow-sm border border-slate-200">
+                                <div class="border-b border-slate-200">
+                                    <div class="flex">
+                                        <button onclick="app.switchAdminTab('orders')" id="tab-orders" class="px-6 py-3 border-b-2 border-primary-600 text-primary-600 font-medium">
+                                            Recent Orders
+                                        </button>
+                                        <button onclick="app.switchAdminTab('products')" id="tab-products" class="px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium">
+                                            Products
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div id="admin-orders" class="p-6">
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full">
+                                            <thead>
+                                                <tr class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                                    <th class="pb-3">Order ID</th>
+                                                    <th class="pb-3">Customer</th>
+                                                    <th class="pb-3">Date</th>
+                                                    <th class="pb-3">Status</th>
+                                                    <th class="pb-3">Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-200">
+                                                ${orders.slice(0, 10).map(order => `
+                                                    <tr>
+                                                        <td class="py-4 font-mono text-sm">${order.id}</td>
+                                                        <td class="py-4 text-sm">User #${order.userId}</td>
+                                                        <td class="py-4 text-sm text-slate-500">${new Date(order.createdAt).toLocaleDateString('en-IN')}</td>
+                                                        <td class="py-4">
+                                                            <select onchange="app.updateOrderStatus('${order.id}', this.value)" 
+                                                                    class="text-sm border border-slate-300 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500">
+                                                                <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+                                                                <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                                                                <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                                                                <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                                                            </select>
+                                                        </td>
+                                                        <td class="py-4 font-medium">${CurrencyFormatter.format(order.total)}</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div id="admin-products" class="p-6 hidden">
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full">
+                                            <thead>
+                                                <tr class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                                    <th class="pb-3">Product</th>
+                                                    <th class="pb-3">Category</th>
+                                                    <th class="pb-3">Price</th>
+                                                    <th class="pb-3">Stock</th>
+                                                    <th class="pb-3">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-200">
+                                                ${products.map(product => `
+                                                    <tr>
+                                                        <td class="py-4">
+                                                            <div class="flex items-center gap-3">
+                                                                <img src="${product.image}" class="w-10 h-10 object-cover rounded" onerror="views.handleImageError(this)">
+                                                                <span class="font-medium text-sm">${Security.sanitizeInput(product.name)}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="py-4 text-sm capitalize">${product.category}</td>
+                                                        <td class="py-4 text-sm">${CurrencyFormatter.format(product.price)}</td>
+                                                        <td class="py-4 text-sm ${product.stock < 5 ? 'text-red-600 font-medium' : ''}">${product.stock}</td>
+                                                        <td class="py-4">
+                                                            <button onclick="app.deleteProduct(${product.id})" class="text-red-600 hover:text-red-700 text-sm">
+                                                                <i class="fas fa-trash"></i> Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderProfile() {
+                if (!auth.currentUser) return;
+                
+                this.container.innerHTML = `
+                    <div class="bg-slate-50 min-h-screen fade-in py-8">
+                        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <h1 class="text-2xl font-bold text-slate-900 mb-8">My Profile</h1>
+                            
+                            <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
+                                <div class="flex items-center gap-6 mb-8">
+                                    <div class="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-3xl font-bold">
+                                        ${auth.currentUser.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-bold text-slate-900">${auth.currentUser.name}</h2>
+                                        <p class="text-slate-500">${auth.currentUser.email}</p>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 mt-2 capitalize">
+                                            ${auth.currentUser.role}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <form onsubmit="event.preventDefault(); app.showToast('Profile updated!', 'success');" class="space-y-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                                            <input type="text" value="${auth.currentUser.name}" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                                            <input type="email" value="${auth.currentUser.email}" disabled class="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-slate-700 mb-1">Mobile</label>
+                                            <input type="tel" placeholder="+91 98765 43210" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+                                        </div>
+                                    </div>
+
+                                    <div class="flex justify-end">
+                                        <button type="submit" class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 transition">
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            createProductCard(product) {
+                return `
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow duration-300 product-card group cursor-pointer"
+                         onclick="router.navigate('product', ${product.id})">
+                        <div class="relative aspect-w-4 aspect-h-3 overflow-hidden bg-slate-200 h-64">
+                            <img src="${product.image}" 
+                                 alt="${Security.sanitizeInput(product.name)}" 
+                                 class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+                                 onerror="views.handleImageError(this)">
+                            ${product.stock < 10 ? `
+                                <div class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                                    Only ${product.stock} left
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="p-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs text-primary-600 font-medium uppercase tracking-wide">${Repository.getCategories().find(c => c.id === product.category)?.name || product.category}</span>
+                                <div class="flex items-center text-yellow-400 text-xs">
+                                    <i class="fas fa-star"></i>
+                                    <span class="ml-1 text-slate-500">${product.rating}</span>
+                                </div>
+                            </div>
+                            <h3 class="font-bold text-slate-900 mb-1 line-clamp-1">${Security.sanitizeInput(product.name)}</h3>
+                            <p class="text-slate-500 text-sm mb-3 line-clamp-2">${Security.sanitizeInput(product.description)}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xl font-bold text-slate-900">${CurrencyFormatter.format(product.price)}</span>
+                                <button onclick="event.stopPropagation(); app.quickAddToCart(${product.id})" 
+                                        class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-primary-600 hover:text-white flex items-center justify-center transition shadow-sm">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderStars(rating) {
+                return Array(5).fill(0).map((_, i) => 
+                    `<i class="${i < Math.floor(rating) ? 'fas' : 'far'} fa-star"></i>`
+                ).join('');
+            }
+        };
+
+        // Application Controller
+        const app = {
+            filters: {
+                category: 'all',
+                maxPrice: 200000,
+                minRating: 0,
+                sort: 'newest',
+                search: ''
+            },
+
+            init() {
+                Repository.init();
+                auth.init();
+                router.init();
+                this.loadCart();
+            },
+
+            loadCart() {
+                CartService.updateUI();
+                this.renderCartItems();
+            },
+
+            renderCartItems() {
+                const container = document.getElementById('cart-items');
+                if (!container) return;
+                
+                if (CartService.items.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center text-slate-500 mt-8">
+                            <i class="fas fa-shopping-basket text-4xl mb-2 opacity-50"></i>
+                            <p>Your cart is empty</p>
+                            <button onclick="app.toggleCart(); router.navigate('shop')" class="mt-4 text-primary-600 font-medium hover:underline">Continue Shopping</button>
+                        </div>
+                    `;
+                    document.getElementById('checkout-btn').disabled = true;
+                } else {
+                    container.innerHTML = CartService.items.map(item => `
+                        <div class="flex gap-4 bg-white p-3 rounded-lg border border-slate-200 slide-in">
+                            <img src="${item.image}" class="w-20 h-20 object-cover rounded-md" onerror="views.handleImageError(this)">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-slate-900 text-sm line-clamp-1">${item.name}</h4>
+                                <p class="text-primary-600 font-bold mt-1">${CurrencyFormatter.format(item.price)}</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <button onclick="CartService.updateQuantity(${item.productId}, ${item.quantity - 1})" 
+                                            class="w-6 h-6 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center text-xs">-</button>
+                                    <span class="text-sm font-medium w-6 text-center">${item.quantity}</span>
+                                    <button onclick="CartService.updateQuantity(${item.productId}, ${item.quantity + 1})" 
+                                            class="w-6 h-6 rounded bg-slate-100 text-slate-600 hover:bg-slate-200 flex items-center justify-center text-xs">+</button>
+                                    <button onclick="CartService.removeItem(${item.productId})" class="ml-auto text-red-500 hover:text-red-700 text-xs">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    document.getElementById('checkout-btn').disabled = false;
+                }
+                
+                document.getElementById('cart-subtotal').textContent = CurrencyFormatter.format(CartService.getTotal());
+                document.getElementById('cart-total').textContent = CurrencyFormatter.format(CartService.getTotal());
+            },
+
+            toggleCart() {
+                const sidebar = document.getElementById('cart-sidebar');
+                const overlay = document.getElementById('cart-overlay');
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('hidden');
+                this.renderCartItems();
+            },
+
+            proceedToCheckout() {
+                this.toggleCart();
+                if (!auth.requireAuth()) return;
+                router.navigate('checkout');
+            },
+
+            quickAddToCart(productId) {
+                const product = Repository.getProduct(productId);
+                if (product && product.stock > 0) {
+                    CartService.addItem(product);
+                } else {
+                    this.showToast('Out of stock', 'error');
+                }
+            },
+
+            addToCartFromDetail(productId) {
+                const quantity = parseInt(document.getElementById('detail-quantity').value) || 1;
+                const product = Repository.getProduct(productId);
+                if (product) {
+                    CartService.addItem(product, quantity);
+                }
+            },
+
+            adjustDetailQuantity(delta) {
+                const input = document.getElementById('detail-quantity');
+                const newVal = parseInt(input.value) + delta;
+                const max = parseInt(input.max);
+                if (newVal >= 1 && newVal <= max) {
+                    input.value = newVal;
+                }
+            },
+
+            async processCheckout() {
+                if (!auth.currentUser) {
+                    this.openAuthModal('login');
+                    return;
+                }
+
+                document.getElementById('loading-overlay').classList.remove('hidden');
+                
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const order = Repository.createOrder({
+                    userId: auth.currentUser.id,
+                    items: [...CartService.items],
+                    total: CartService.getTotal() * 1.18, // Including GST
+                    shipping: { city: 'India' }
+                });
+                
+                CartService.clear();
+                
+                document.getElementById('loading-overlay').classList.add('hidden');
+                
+                this.showToast('Order placed successfully!', 'success');
+                router.navigate('orders');
+            },
+
+            handleSearch(query) {
+                this.filters.search = Security.sanitizeInput(query);
+                if (router.currentRoute !== 'shop') {
+                    router.navigate('shop');
+                } else {
+                    this.loadProducts();
+                }
+            },
+
+            filterByCategory(category) {
+                this.filters.category = category;
+                this.loadProducts();
+            },
+
+            sortProducts(sort) {
+                this.filters.sort = sort;
+                this.loadProducts();
+            },
+
+            applyFilters() {
+                this.loadProducts();
+            },
+
+            loadProducts(overrideFilters = null) {
+                const filters = overrideFilters || this.filters;
+                const products = Repository.getProducts(filters);
+                const grid = document.getElementById('products-grid');
+                const count = document.getElementById('product-count');
+                
+                if (grid) {
+                    if (products.length === 0) {
+                        grid.innerHTML = `
+                            <div class="col-span-full text-center py-12">
+                                <i class="fas fa-search text-4xl text-slate-300 mb-4"></i>
+                                <p class="text-slate-500">No products found</p>
+                            </div>
+                        `;
+                    } else {
+                        grid.innerHTML = products.map(p => views.createProductCard(p)).join('');
+                    }
+                }
+                
+                if (count) {
+                    count.textContent = `${products.length} product${products.length !== 1 ? 's' : ''}`;
+                }
+            },
+
+            openAuthModal(mode = 'login') {
+                const modal = document.getElementById('auth-modal');
+                const form = document.getElementById('auth-form');
+                form.dataset.mode = mode;
+                
+                if (mode === 'register') {
+                    auth.switchMode();
+                } else {
+                    form.dataset.mode = 'login';
+                    document.getElementById('auth-title').textContent = 'Welcome to SnapCart';
+                    document.getElementById('name-field').classList.add('hidden');
+                    document.getElementById('auth-switch-text').textContent = "Don't have an account?";
+                    document.getElementById('auth-switch-btn').textContent = 'Sign Up';
+                }
+                
+                modal.classList.remove('hidden');
+            },
+
+            closeAuthModal() {
+                document.getElementById('auth-modal').classList.add('hidden');
+                document.getElementById('auth-form').reset();
+            },
+
+            togglePasswordVisibility(btn) {
+                const input = btn.parentElement.querySelector('input');
+                const icon = btn.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            },
+
+            toggleUserDropdown() {
+                document.getElementById('user-dropdown').classList.toggle('hidden');
+            },
+
+            toggleMobileMenu() {
+                const menu = document.getElementById('mobile-menu');
+                menu.classList.toggle('hidden');
+            },
+
+            showToast(message, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                
+                const colors = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    info: 'bg-slate-800'
+                };
+                
+                const icons = {
+                    success: 'fa-check-circle',
+                    error: 'fa-exclamation-circle',
+                    info: 'fa-info-circle'
+                };
+                
+                toast.className = `${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 toast`;
+                toast.innerHTML = `
+                    <i class="fas ${icons[type]}"></i>
+                    <span class="font-medium">${Security.sanitizeInput(message)}</span>
+                `;
+                
+                container.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 100);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            },
+
+            switchAdminTab(tab) {
+                document.getElementById('admin-orders').classList.add('hidden');
+                document.getElementById('admin-products').classList.add('hidden');
+                document.getElementById('tab-orders').classList.remove('border-primary-600', 'text-primary-600');
+                document.getElementById('tab-products').classList.remove('border-primary-600', 'text-primary-600');
+                document.getElementById('tab-orders').classList.add('border-transparent', 'text-slate-500');
+                document.getElementById('tab-products').classList.add('border-transparent', 'text-slate-500');
+                
+                document.getElementById(`admin-${tab}`).classList.remove('hidden');
+                document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-slate-500');
+                document.getElementById(`tab-${tab}`).classList.add('border-primary-600', 'text-primary-600');
+            },
+
+            updateOrderStatus(orderId, status) {
+                Repository.updateOrderStatus(orderId, status);
+                this.showToast('Order status updated', 'success');
+            },
+
+            deleteProduct(id) {
+                if (confirm('Are you sure you want to delete this product?')) {
+                    Repository.deleteProduct(id);
+                    views.renderAdmin();
+                    this.showToast('Product deleted', 'success');
+                }
+            },
+
+            openAddProductModal() {
+                const name = prompt('Product Name:');
+                if (!name) return;
+                
+                const price = parseFloat(prompt('Price (in ₹):', '999'));
+                const category = prompt('Category (electronics/mobiles/fashion/home/sports/books):', 'electronics');
+                const stock = parseInt(prompt('Stock:', '10'));
+                
+                if (name && price && category && stock) {
+                    Repository.createProduct({
+                        name: Security.sanitizeInput(name),
+                        price: price,
+                        category: category,
+                        stock: stock,
+                        image: `https://placehold.co/400x400/f97316/ffffff?text=${encodeURIComponent(name)}`,
+                        description: 'New product added by admin',
+                        rating: 0
+                    });
+                    
+                    views.renderAdmin();
+                    this.showToast('Product added successfully', 'success');
+                }
+            }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+
+        window.app = app;
+        window.auth = auth;
+        window.router = router;
+        window.views = views;
+        window.CurrencyFormatter = CurrencyFormatter;
+    </script>
+</body>
+</html>
